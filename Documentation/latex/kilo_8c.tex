@@ -1,0 +1,1006 @@
+\doxysection{kilo.\+c File Reference}
+\hypertarget{kilo_8c}{}\label{kilo_8c}\index{kilo.c@{kilo.c}}
+
+
+The file responsible for running the text editor.  
+
+
+{\ttfamily \#include $<$ctype.\+h$>$}\newline
+{\ttfamily \#include $<$errno.\+h$>$}\newline
+{\ttfamily \#include $<$fcntl.\+h$>$}\newline
+{\ttfamily \#include $<$stdio.\+h$>$}\newline
+{\ttfamily \#include $<$stdarg.\+h$>$}\newline
+{\ttfamily \#include $<$stdlib.\+h$>$}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include $<$sys/ioctl.\+h$>$}\newline
+{\ttfamily \#include $<$sys/types.\+h$>$}\newline
+{\ttfamily \#include $<$termios.\+h$>$}\newline
+{\ttfamily \#include $<$time.\+h$>$}\newline
+{\ttfamily \#include $<$unistd.\+h$>$}\newline
+\doxysubsubsection*{Data Structures}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structerow}{erow}}
+\begin{DoxyCompactList}\small\item\em erow stands for "{}editor row"{} and stores a line of text as a pointer to a dynamically-\/allocated character data and a size \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structeditor_config}{editor\+Config}}
+\begin{DoxyCompactList}\small\item\em Stores the global state of the editor. \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structeditor_syntax}{editor\+Syntax}}
+\begin{DoxyCompactList}\small\item\em Stores filetype detection information. \end{DoxyCompactList}\item 
+struct \mbox{\hyperlink{structabuf}{abuf}}
+\begin{DoxyCompactList}\small\item\em abuf (append buffer) is a dynamically allocated string that will be appended to the screen in one big write call. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{kilo_8c_a8fb447618db946a9e2a596d9ea18763f}{\+\_\+\+DEFAULT\+\_\+\+SOURCE}}
+\item 
+\#define \mbox{\hyperlink{kilo_8c_ad3d8a3bd0c0b677acef144f2c2ef6d73}{\+\_\+\+BSD\+\_\+\+SOURCE}}
+\item 
+\#define \mbox{\hyperlink{kilo_8c_a369266c24eacffb87046522897a570d5}{\+\_\+\+GNU\+\_\+\+SOURCE}}
+\item 
+\#define \mbox{\hyperlink{kilo_8c_a18f6371d1613d4d98d8ae1dd18fba5d1}{KILO\+\_\+\+VERSION}}~"{}0.\+0.\+1"{}
+\item 
+\#define \mbox{\hyperlink{kilo_8c_abb38d93d85b8f0abc62beefe7c810d38}{KILO\+\_\+\+TAB\+\_\+\+STOP}}~8
+\item 
+\#define \mbox{\hyperlink{kilo_8c_a823899a9d795111ddcbbb22ab6475f6d}{KILO\+\_\+\+QUIT\+\_\+\+TIMES}}~3
+\item 
+\#define \mbox{\hyperlink{kilo_8c_a6ad38d024c3548be5f50d7fc0679664a}{CTRL\+\_\+\+KEY}}(k)~((k) \& 0x1f)
+\item 
+\#define \mbox{\hyperlink{kilo_8c_a8f4c528a8ea0afe3198c84d13dfb41ab}{HL\+\_\+\+HIGHLIGHT\+\_\+\+NUMBERS}}~(1$<$$<$0)
+\item 
+\#define \mbox{\hyperlink{kilo_8c_ad153e738bdfb1a7e4406bb630231e894}{HL\+\_\+\+HIGHLIGHT\+\_\+\+STRINGS}}~(1$<$$<$1)
+\item 
+\#define \mbox{\hyperlink{kilo_8c_ac72d068a4180c7a8e9ea0feebc0013ef}{HLDB\+\_\+\+ENTRIES}}~(sizeof(\mbox{\hyperlink{kilo_8c_a0c876f47e5edee69a4f936864cc96830}{HLDB}}) / sizeof(\mbox{\hyperlink{kilo_8c_a0c876f47e5edee69a4f936864cc96830}{HLDB}}\mbox{[}0\mbox{]}))
+\item 
+\#define \mbox{\hyperlink{kilo_8c_a338375e0d9379e2c297acac89c4049e7}{ABUF\+\_\+\+INIT}}~\{NULL, 0\}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef struct erow \mbox{\hyperlink{kilo_8c_a765f8cddf51602819c46ec01a4b5a963}{erow}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Enumerations}
+\begin{DoxyCompactItemize}
+\item 
+enum \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284}{editor\+Key}} \{ \newline
+\mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284ad2534cebcf6f430484b7c931dd657ddc}{BACKSPACE}} = 127
+, \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284ab313b64675c3e4a36ac01132126d3c01}{ARROW\+\_\+\+LEFT}} = 1000
+, \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284a6a5a02b3e54e60d47280bf250e2186bc}{ARROW\+\_\+\+RIGHT}}
+, \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284ab47be4e7317d7a539adaebd5eeeef427}{ARROW\+\_\+\+UP}}
+, \newline
+\mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284a351bb4dabfe58b550f1a5a1c8bb58e46}{ARROW\+\_\+\+DOWN}}
+, \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284a240efca8114fafb5e8dc8512f15301bf}{DEL\+\_\+\+KEY}}
+, \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284adbfee56bbc71c97e2ed80ba44706581b}{HOME\+\_\+\+KEY}}
+, \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284aad81a36193ad805db56f8d06c6210d2c}{END\+\_\+\+KEY}}
+, \newline
+\mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284a0442824c041b9618cd7c512205e7e6dc}{PAGE\+\_\+\+UP}}
+, \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284a714c5d27586a8bcbab274d9176da1539}{PAGE\+\_\+\+DOWN}}
+ \}
+\item 
+enum \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7f}{editor\+Highlight}} \{ \newline
+\mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fae160620891107e3e1d3537e48213a04c}{HL\+\_\+\+NORMAL}} = 0
+, \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa129787a5ad1ec97dd8abd025d808d333}{HL\+\_\+\+COMMENT}}
+, \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa75053e8913cc0d955fc7c172af21c965}{HL\+\_\+\+MLCOMMENT}}
+, \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa3ed0d876506626b4e68b1596d4eb7e04}{HL\+\_\+\+KEYWORD1}}
+, \newline
+\mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fad11fc9103676b7e2776f70b0eaeac30e}{HL\+\_\+\+KEYWORD2}}
+, \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa5056fda00bfe4af644df9735486ff41b}{HL\+\_\+\+STRING}}
+, \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa7601c8b381ac249ffa52351976d96554}{HL\+\_\+\+NUMBER}}
+, \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa3d132a91a68ed18a2e17a901ee969793}{HL\+\_\+\+MATCH}}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{kilo_8c_a507fc962f80d3c43c23718965348520e}{editor\+Set\+Status\+Message}} (const char \texorpdfstring{$\ast$}{*}fmt,...)
+\begin{DoxyCompactList}\small\item\em Append the status message from E.\+statusmsg to the append buffer. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_acee58e6036bf106ea038464d67dfc201}{editor\+Refresh\+Screen}} (void)
+\begin{DoxyCompactList}\small\item\em Refreshes the screen. \end{DoxyCompactList}\item 
+char \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{kilo_8c_a4de965d803aea82e894820b40e0ed097}{editor\+Prompt}} (char \texorpdfstring{$\ast$}{*}prompt, void(\texorpdfstring{$\ast$}{*}callback)(char \texorpdfstring{$\ast$}{*}, int))
+\begin{DoxyCompactList}\small\item\em Displays a prompt in the status bar. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a8cf98f19b000d053dbd9ae2cf957d424}{editor\+Find\+Callback}} (char \texorpdfstring{$\ast$}{*}query, int key)
+\begin{DoxyCompactList}\small\item\em A callback function that is called everytime the user inputs text into the search bar. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_aefa25608d36aae10af5209451e23e8e2}{die}} (const char \texorpdfstring{$\ast$}{*}s)
+\begin{DoxyCompactList}\small\item\em A panic function that prints an error message and exits the program. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_af950834ca7c59ac798ad1995a16e6d06}{disable\+Raw\+Mode}} (void)
+\begin{DoxyCompactList}\small\item\em Returns the terminal back to default settings. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a37aaa5d8dd5b525007a0645edf49638f}{enable\+Raw\+Mode}} (void)
+\begin{DoxyCompactList}\small\item\em Switches the terminal to RAW MODE, which allows the programmer to process each keystroke the user inputs individually. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_a92979f78e89c86c1b8f99704f7ae584c}{editor\+Read\+Key}} (void)
+\begin{DoxyCompactList}\small\item\em Reads in raw input from the user, and appropriately detects special keys. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_a485c870734764c8e5acce9e16e4d70ac}{get\+Cursor\+Position}} (int \texorpdfstring{$\ast$}{*}rows, int \texorpdfstring{$\ast$}{*}cols)
+\begin{DoxyCompactList}\small\item\em Determines the current x and y position of the cursor. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_aeb7a921b1f250259a639fe7b24166021}{get\+Window\+Size}} (int \texorpdfstring{$\ast$}{*}rows, int \texorpdfstring{$\ast$}{*}cols)
+\begin{DoxyCompactList}\small\item\em Determines the height and width of the screen. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_afd2ade8d4e20fc9e78850fa3ccd61ef3}{is\+\_\+separator}} (int c)
+\begin{DoxyCompactList}\small\item\em Identifies seperator charcters. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_afaaf0faf104479999b01bc09e894e3e4}{editor\+Update\+Syntax}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row)
+\begin{DoxyCompactList}\small\item\em Goes through the characters of an erow and highlights them all. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_a61d99d26ac6d1ad082b2dc34498fcb9d}{editor\+Syntax\+To\+Color}} (int hl)
+\begin{DoxyCompactList}\small\item\em maps values in hl (highlight array) to actual ANSI color codes \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a051616bc78710cb3af54f2fd26a88249}{editor\+Select\+Syntax\+Highlight}} ()
+\begin{DoxyCompactList}\small\item\em Matches the current filename to one of the filematch fields in HLDB. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_ac292db94a14cf6392c830afc31a5f644}{editor\+Row\+Cx\+To\+Rx}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row, int cx)
+\begin{DoxyCompactList}\small\item\em Calculates the correct row length by counting tabs correctly. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_ae94c7e64a0a5c007cef67fed6e295514}{editor\+Row\+Rx\+To\+Cx}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row, int rx)
+\begin{DoxyCompactList}\small\item\em Converts a render index into a index in the chars array. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a82d95ee3b40943bcaa021a89756aafa8}{editor\+Update\+Row}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row)
+\begin{DoxyCompactList}\small\item\em Updates the render array whenever the text of the row changes. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a3a16dc547e91a2400ef2b63bae16860e}{editor\+Insert\+Row}} (int at, char \texorpdfstring{$\ast$}{*}s, size\+\_\+t len)
+\begin{DoxyCompactList}\small\item\em Insert a row at a given index. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a461e8856decb29eb95e1010b0bbcae43}{editor\+Free\+Row}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row)
+\begin{DoxyCompactList}\small\item\em Deallocates memory for a row. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a3554979118d68fa8482814ea8e45ba62}{editor\+Del\+Row}} (int at)
+\begin{DoxyCompactList}\small\item\em Deletes a specific row. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_afdb757e8ae4057355e181a02396b8c55}{editor\+Row\+Insert\+Char}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row, int at, int c)
+\begin{DoxyCompactList}\small\item\em Inserts a char at a given index of a given row. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a1e282bcd8f1f442f9c6b1e6e610379dd}{editor\+Row\+Append\+String}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row, char \texorpdfstring{$\ast$}{*}s, size\+\_\+t len)
+\begin{DoxyCompactList}\small\item\em Appends a whole string to the end of the row. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a4bc8521084efa00016a83cd7f11334e1}{editor\+Row\+Del\+Char}} (\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}row, int at)
+\begin{DoxyCompactList}\small\item\em Dels a char in a row. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_aa29057a4194fec0158f141b54518444a}{editor\+Insert\+Char}} (int c)
+\begin{DoxyCompactList}\small\item\em Called by \doxylink{kilo_8c_a7a463a314ab1c9c71846a88a71ea8fe8}{editor\+Process\+Keypress()} to map a basic char to an operation in the text editor. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_aa95d51659b9b1309d0778d7a832a8abb}{editor\+Del\+Char}} (void)
+\begin{DoxyCompactList}\small\item\em Deletes the cursor at the location of the cursor. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a5f684231e33ad611337fbe52ea910a47}{editor\+Insert\+Newline}} (void)
+\begin{DoxyCompactList}\small\item\em Supports the inserting of a new line, if we are at the end of the last line. \end{DoxyCompactList}\item 
+char \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{kilo_8c_ab194682d67a26adec30476ce08cc5474}{editor\+Rows\+To\+String}} (int \texorpdfstring{$\ast$}{*}buflen)
+\begin{DoxyCompactList}\small\item\em Converts a all the text data to a string that will be written to the disk eventually. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_ac7e9106f11ecfa36e5695996c1f6e316}{editor\+Open}} (char \texorpdfstring{$\ast$}{*}filename)
+\begin{DoxyCompactList}\small\item\em Opens a locally stored file by name and reads it line by line. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a68263950ddb1d812b168bfec55eed130}{editor\+Save}} (void)
+\begin{DoxyCompactList}\small\item\em Either creates a new file and opens it, or modifies the existing file stored in E.\+filename. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a28cfa432286bd17c79730da8bbcedd48}{editor\+Find}} (void)
+\begin{DoxyCompactList}\small\item\em Prompts the user to search for a string in the file. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a9dd3715258f4c42aeb40ae92f51422e9}{ab\+Append}} (struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}ab, const char \texorpdfstring{$\ast$}{*}s, int len)
+\begin{DoxyCompactList}\small\item\em Appends a string to the end of the append buffer. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_aa676d43ad5c715bcf8ec2c3b2df0f4e0}{ab\+Free}} (struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}ab)
+\begin{DoxyCompactList}\small\item\em a deconstructor that deallocates the dynamic memory used by abuf \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_ac4bae93e2e5ada20a06816b4162e37ca}{editor\+Scroll}} (void)
+\begin{DoxyCompactList}\small\item\em Allows scrolling through the text editor. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a6236022e462c2ceeed7163aac57751e1}{editor\+Draw\+Rows}} (struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}ab)
+\begin{DoxyCompactList}\small\item\em Handles drawing of each row of the buffer of text being edited. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a4c6fae25603df97fe6647bc9b650e2cd}{editor\+Draw\+Status\+Bar}} (struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}ab)
+\begin{DoxyCompactList}\small\item\em Draws the status bar at the bottom of the screen. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a0ae24faf3ef9e6982f6e41f45c9eebde}{editor\+Draw\+Message\+Bar}} (struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}ab)
+\begin{DoxyCompactList}\small\item\em Appends the message stored in E.\+statusmsg to the append buffer. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_af2a534cb150fe37498afa8c1afd177af}{editor\+Move\+Cursor}} (int key)
+\begin{DoxyCompactList}\small\item\em Moves the cursor based on the arrow keys. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a7a463a314ab1c9c71846a88a71ea8fe8}{editor\+Process\+Keypress}} (void)
+\begin{DoxyCompactList}\small\item\em Proccess the user keypress to preform the correct option. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{kilo_8c_a979919615ca983efccb1209f1a39cf5a}{init\+Editor}} (void)
+\begin{DoxyCompactList}\small\item\em Initializes default values for editor config. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{kilo_8c_a0ddf1224851353fc92bfbff6f499fa97}{main}} (int argc, char \texorpdfstring{$\ast$}{*}argv\mbox{[}$\,$\mbox{]})
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structeditor_config}{editor\+Config}} \mbox{\hyperlink{kilo_8c_a2102c449d589a72385cc03ed8906854f}{E}}
+\item 
+char \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{kilo_8c_a65182c667beb7c85c859d7661b246ac5}{C\+\_\+\+HL\+\_\+extensions}} \mbox{[}$\,$\mbox{]} = \{ "{}.c"{}, "{}.h"{}, "{}.cpp"{}, NULL \}
+\item 
+char \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{kilo_8c_a4925d040b30cb6504c806d02ee1d96b5}{C\+\_\+\+HL\+\_\+keywords}} \mbox{[}$\,$\mbox{]}
+\item 
+struct \mbox{\hyperlink{structeditor_syntax}{editor\+Syntax}} \mbox{\hyperlink{kilo_8c_a0c876f47e5edee69a4f936864cc96830}{HLDB}} \mbox{[}$\,$\mbox{]}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+The file responsible for running the text editor. 
+
+\begin{DoxyAuthor}{Author}
+Andre Arante 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+6 Jun 2024 
+\end{DoxyDate}
+
+
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{kilo_8c_ad3d8a3bd0c0b677acef144f2c2ef6d73}\index{kilo.c@{kilo.c}!\_BSD\_SOURCE@{\_BSD\_SOURCE}}
+\index{\_BSD\_SOURCE@{\_BSD\_SOURCE}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{\_BSD\_SOURCE}{\_BSD\_SOURCE}}
+{\footnotesize\ttfamily \label{kilo_8c_ad3d8a3bd0c0b677acef144f2c2ef6d73} 
+\#define \+\_\+\+BSD\+\_\+\+SOURCE}
+
+\Hypertarget{kilo_8c_a8fb447618db946a9e2a596d9ea18763f}\index{kilo.c@{kilo.c}!\_DEFAULT\_SOURCE@{\_DEFAULT\_SOURCE}}
+\index{\_DEFAULT\_SOURCE@{\_DEFAULT\_SOURCE}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{\_DEFAULT\_SOURCE}{\_DEFAULT\_SOURCE}}
+{\footnotesize\ttfamily \label{kilo_8c_a8fb447618db946a9e2a596d9ea18763f} 
+\#define \+\_\+\+DEFAULT\+\_\+\+SOURCE}
+
+\Hypertarget{kilo_8c_a369266c24eacffb87046522897a570d5}\index{kilo.c@{kilo.c}!\_GNU\_SOURCE@{\_GNU\_SOURCE}}
+\index{\_GNU\_SOURCE@{\_GNU\_SOURCE}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{\_GNU\_SOURCE}{\_GNU\_SOURCE}}
+{\footnotesize\ttfamily \label{kilo_8c_a369266c24eacffb87046522897a570d5} 
+\#define \+\_\+\+GNU\+\_\+\+SOURCE}
+
+\Hypertarget{kilo_8c_a338375e0d9379e2c297acac89c4049e7}\index{kilo.c@{kilo.c}!ABUF\_INIT@{ABUF\_INIT}}
+\index{ABUF\_INIT@{ABUF\_INIT}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{ABUF\_INIT}{ABUF\_INIT}}
+{\footnotesize\ttfamily \label{kilo_8c_a338375e0d9379e2c297acac89c4049e7} 
+\#define ABUF\+\_\+\+INIT~\{NULL, 0\}}
+
+\Hypertarget{kilo_8c_a6ad38d024c3548be5f50d7fc0679664a}\index{kilo.c@{kilo.c}!CTRL\_KEY@{CTRL\_KEY}}
+\index{CTRL\_KEY@{CTRL\_KEY}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{CTRL\_KEY}{CTRL\_KEY}}
+{\footnotesize\ttfamily \label{kilo_8c_a6ad38d024c3548be5f50d7fc0679664a} 
+\#define CTRL\+\_\+\+KEY(\begin{DoxyParamCaption}\item[{}]{k}{}\end{DoxyParamCaption})~((k) \& 0x1f)}
+
+\Hypertarget{kilo_8c_a8f4c528a8ea0afe3198c84d13dfb41ab}\index{kilo.c@{kilo.c}!HL\_HIGHLIGHT\_NUMBERS@{HL\_HIGHLIGHT\_NUMBERS}}
+\index{HL\_HIGHLIGHT\_NUMBERS@{HL\_HIGHLIGHT\_NUMBERS}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{HL\_HIGHLIGHT\_NUMBERS}{HL\_HIGHLIGHT\_NUMBERS}}
+{\footnotesize\ttfamily \label{kilo_8c_a8f4c528a8ea0afe3198c84d13dfb41ab} 
+\#define HL\+\_\+\+HIGHLIGHT\+\_\+\+NUMBERS~(1$<$$<$0)}
+
+\Hypertarget{kilo_8c_ad153e738bdfb1a7e4406bb630231e894}\index{kilo.c@{kilo.c}!HL\_HIGHLIGHT\_STRINGS@{HL\_HIGHLIGHT\_STRINGS}}
+\index{HL\_HIGHLIGHT\_STRINGS@{HL\_HIGHLIGHT\_STRINGS}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{HL\_HIGHLIGHT\_STRINGS}{HL\_HIGHLIGHT\_STRINGS}}
+{\footnotesize\ttfamily \label{kilo_8c_ad153e738bdfb1a7e4406bb630231e894} 
+\#define HL\+\_\+\+HIGHLIGHT\+\_\+\+STRINGS~(1$<$$<$1)}
+
+\Hypertarget{kilo_8c_ac72d068a4180c7a8e9ea0feebc0013ef}\index{kilo.c@{kilo.c}!HLDB\_ENTRIES@{HLDB\_ENTRIES}}
+\index{HLDB\_ENTRIES@{HLDB\_ENTRIES}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{HLDB\_ENTRIES}{HLDB\_ENTRIES}}
+{\footnotesize\ttfamily \label{kilo_8c_ac72d068a4180c7a8e9ea0feebc0013ef} 
+\#define HLDB\+\_\+\+ENTRIES~(sizeof(\mbox{\hyperlink{kilo_8c_a0c876f47e5edee69a4f936864cc96830}{HLDB}}) / sizeof(\mbox{\hyperlink{kilo_8c_a0c876f47e5edee69a4f936864cc96830}{HLDB}}\mbox{[}0\mbox{]}))}
+
+\Hypertarget{kilo_8c_a823899a9d795111ddcbbb22ab6475f6d}\index{kilo.c@{kilo.c}!KILO\_QUIT\_TIMES@{KILO\_QUIT\_TIMES}}
+\index{KILO\_QUIT\_TIMES@{KILO\_QUIT\_TIMES}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{KILO\_QUIT\_TIMES}{KILO\_QUIT\_TIMES}}
+{\footnotesize\ttfamily \label{kilo_8c_a823899a9d795111ddcbbb22ab6475f6d} 
+\#define KILO\+\_\+\+QUIT\+\_\+\+TIMES~3}
+
+\Hypertarget{kilo_8c_abb38d93d85b8f0abc62beefe7c810d38}\index{kilo.c@{kilo.c}!KILO\_TAB\_STOP@{KILO\_TAB\_STOP}}
+\index{KILO\_TAB\_STOP@{KILO\_TAB\_STOP}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{KILO\_TAB\_STOP}{KILO\_TAB\_STOP}}
+{\footnotesize\ttfamily \label{kilo_8c_abb38d93d85b8f0abc62beefe7c810d38} 
+\#define KILO\+\_\+\+TAB\+\_\+\+STOP~8}
+
+\Hypertarget{kilo_8c_a18f6371d1613d4d98d8ae1dd18fba5d1}\index{kilo.c@{kilo.c}!KILO\_VERSION@{KILO\_VERSION}}
+\index{KILO\_VERSION@{KILO\_VERSION}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{KILO\_VERSION}{KILO\_VERSION}}
+{\footnotesize\ttfamily \label{kilo_8c_a18f6371d1613d4d98d8ae1dd18fba5d1} 
+\#define KILO\+\_\+\+VERSION~"{}0.\+0.\+1"{}}
+
+
+
+\doxysubsection{Typedef Documentation}
+\Hypertarget{kilo_8c_a765f8cddf51602819c46ec01a4b5a963}\index{kilo.c@{kilo.c}!erow@{erow}}
+\index{erow@{erow}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{erow}{erow}}
+{\footnotesize\ttfamily \label{kilo_8c_a765f8cddf51602819c46ec01a4b5a963} 
+typedef struct erow erow}
+
+Member \textquotesingle{}erow\textquotesingle{} contains raw text data and render buffer of the text editor 
+
+\doxysubsection{Enumeration Type Documentation}
+\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7f}\index{kilo.c@{kilo.c}!editorHighlight@{editorHighlight}}
+\index{editorHighlight@{editorHighlight}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorHighlight}{editorHighlight}}
+{\footnotesize\ttfamily \label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+enum \mbox{\hyperlink{kilo_8c_ab5583f4e615b0b91c806512b59423a7f}{editor\+Highlight}}}
+
+\begin{DoxyEnumFields}{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_NORMAL@{HL\_NORMAL}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_NORMAL@{HL\_NORMAL}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fae160620891107e3e1d3537e48213a04c}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+NORMAL&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_COMMENT@{HL\_COMMENT}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_COMMENT@{HL\_COMMENT}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa129787a5ad1ec97dd8abd025d808d333}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+COMMENT&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_MLCOMMENT@{HL\_MLCOMMENT}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_MLCOMMENT@{HL\_MLCOMMENT}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa75053e8913cc0d955fc7c172af21c965}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+MLCOMMENT&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_KEYWORD1@{HL\_KEYWORD1}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_KEYWORD1@{HL\_KEYWORD1}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa3ed0d876506626b4e68b1596d4eb7e04}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+KEYWORD1&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_KEYWORD2@{HL\_KEYWORD2}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_KEYWORD2@{HL\_KEYWORD2}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fad11fc9103676b7e2776f70b0eaeac30e}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+KEYWORD2&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_STRING@{HL\_STRING}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_STRING@{HL\_STRING}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa5056fda00bfe4af644df9735486ff41b}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+STRING&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_NUMBER@{HL\_NUMBER}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_NUMBER@{HL\_NUMBER}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa7601c8b381ac249ffa52351976d96554}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+NUMBER&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HL\_MATCH@{HL\_MATCH}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HL\_MATCH@{HL\_MATCH}}}\Hypertarget{kilo_8c_ab5583f4e615b0b91c806512b59423a7fa3d132a91a68ed18a2e17a901ee969793}\label{kilo_8c_ab5583f4e615b0b91c806512b59423a7f} 
+HL\+\_\+\+MATCH&\\
+\hline
+
+\end{DoxyEnumFields}
+\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284}\index{kilo.c@{kilo.c}!editorKey@{editorKey}}
+\index{editorKey@{editorKey}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorKey}{editorKey}}
+{\footnotesize\ttfamily \label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+enum \mbox{\hyperlink{kilo_8c_afc98e1836253d54640dce00e325aa284}{editor\+Key}}}
+
+\begin{DoxyEnumFields}{Enumerator}
+\raisebox{\heightof{T}}[0pt][0pt]{\index{BACKSPACE@{BACKSPACE}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!BACKSPACE@{BACKSPACE}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284ad2534cebcf6f430484b7c931dd657ddc}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+BACKSPACE&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{ARROW\_LEFT@{ARROW\_LEFT}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!ARROW\_LEFT@{ARROW\_LEFT}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284ab313b64675c3e4a36ac01132126d3c01}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+ARROW\+\_\+\+LEFT&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{ARROW\_RIGHT@{ARROW\_RIGHT}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!ARROW\_RIGHT@{ARROW\_RIGHT}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284a6a5a02b3e54e60d47280bf250e2186bc}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+ARROW\+\_\+\+RIGHT&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{ARROW\_UP@{ARROW\_UP}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!ARROW\_UP@{ARROW\_UP}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284ab47be4e7317d7a539adaebd5eeeef427}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+ARROW\+\_\+\+UP&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{ARROW\_DOWN@{ARROW\_DOWN}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!ARROW\_DOWN@{ARROW\_DOWN}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284a351bb4dabfe58b550f1a5a1c8bb58e46}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+ARROW\+\_\+\+DOWN&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{DEL\_KEY@{DEL\_KEY}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!DEL\_KEY@{DEL\_KEY}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284a240efca8114fafb5e8dc8512f15301bf}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+DEL\+\_\+\+KEY&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{HOME\_KEY@{HOME\_KEY}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!HOME\_KEY@{HOME\_KEY}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284adbfee56bbc71c97e2ed80ba44706581b}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+HOME\+\_\+\+KEY&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{END\_KEY@{END\_KEY}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!END\_KEY@{END\_KEY}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284aad81a36193ad805db56f8d06c6210d2c}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+END\+\_\+\+KEY&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{PAGE\_UP@{PAGE\_UP}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!PAGE\_UP@{PAGE\_UP}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284a0442824c041b9618cd7c512205e7e6dc}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+PAGE\+\_\+\+UP&\\
+\hline
+
+\raisebox{\heightof{T}}[0pt][0pt]{\index{PAGE\_DOWN@{PAGE\_DOWN}!kilo.c@{kilo.c}}\index{kilo.c@{kilo.c}!PAGE\_DOWN@{PAGE\_DOWN}}}\Hypertarget{kilo_8c_afc98e1836253d54640dce00e325aa284a714c5d27586a8bcbab274d9176da1539}\label{kilo_8c_afc98e1836253d54640dce00e325aa284} 
+PAGE\+\_\+\+DOWN&\\
+\hline
+
+\end{DoxyEnumFields}
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{kilo_8c_a9dd3715258f4c42aeb40ae92f51422e9}\index{kilo.c@{kilo.c}!abAppend@{abAppend}}
+\index{abAppend@{abAppend}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{abAppend()}{abAppend()}}
+{\footnotesize\ttfamily \label{kilo_8c_a9dd3715258f4c42aeb40ae92f51422e9} 
+void ab\+Append (\begin{DoxyParamCaption}\item[{struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}}]{ab}{, }\item[{const char \texorpdfstring{$\ast$}{*}}]{s}{, }\item[{int}]{len}{}\end{DoxyParamCaption})}
+
+
+
+Appends a string to the end of the append buffer. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em ab} & a reference to the append buffer \\
+\hline
+{\em s} & a string to append \\
+\hline
+{\em len} & the length of the string to append \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_aa676d43ad5c715bcf8ec2c3b2df0f4e0}\index{kilo.c@{kilo.c}!abFree@{abFree}}
+\index{abFree@{abFree}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{abFree()}{abFree()}}
+{\footnotesize\ttfamily \label{kilo_8c_aa676d43ad5c715bcf8ec2c3b2df0f4e0} 
+void ab\+Free (\begin{DoxyParamCaption}\item[{struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}}]{ab}{}\end{DoxyParamCaption})}
+
+
+
+a deconstructor that deallocates the dynamic memory used by abuf 
+
+
+\begin{DoxyParams}{Parameters}
+{\em ab} & a referenece to the append buffer \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_aefa25608d36aae10af5209451e23e8e2}\index{kilo.c@{kilo.c}!die@{die}}
+\index{die@{die}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{die()}{die()}}
+{\footnotesize\ttfamily \label{kilo_8c_aefa25608d36aae10af5209451e23e8e2} 
+void die (\begin{DoxyParamCaption}\item[{const char \texorpdfstring{$\ast$}{*}}]{s}{}\end{DoxyParamCaption})}
+
+
+
+A panic function that prints an error message and exits the program. 
+
+Most C functions set the global var errno function to indicate an error. Die uses perror() reads errno and prints a descriptive message. This function mostly checks library calls for failure.
+
+
+\begin{DoxyParams}{Parameters}
+{\em \texorpdfstring{$\ast$}{*}s} & the error that was caught and to be displayed to user \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_af950834ca7c59ac798ad1995a16e6d06}\index{kilo.c@{kilo.c}!disableRawMode@{disableRawMode}}
+\index{disableRawMode@{disableRawMode}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{disableRawMode()}{disableRawMode()}}
+{\footnotesize\ttfamily \label{kilo_8c_af950834ca7c59ac798ad1995a16e6d06} 
+void disable\+Raw\+Mode (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Returns the terminal back to default settings. 
+
+Called when the terminal is closed. \Hypertarget{kilo_8c_aa95d51659b9b1309d0778d7a832a8abb}\index{kilo.c@{kilo.c}!editorDelChar@{editorDelChar}}
+\index{editorDelChar@{editorDelChar}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorDelChar()}{editorDelChar()}}
+{\footnotesize\ttfamily \label{kilo_8c_aa95d51659b9b1309d0778d7a832a8abb} 
+void editor\+Del\+Char (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Deletes the cursor at the location of the cursor. 
+
+\Hypertarget{kilo_8c_a3554979118d68fa8482814ea8e45ba62}\index{kilo.c@{kilo.c}!editorDelRow@{editorDelRow}}
+\index{editorDelRow@{editorDelRow}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorDelRow()}{editorDelRow()}}
+{\footnotesize\ttfamily \label{kilo_8c_a3554979118d68fa8482814ea8e45ba62} 
+void editor\+Del\+Row (\begin{DoxyParamCaption}\item[{int}]{at}{}\end{DoxyParamCaption})}
+
+
+
+Deletes a specific row. 
+
+First
+
+
+\begin{DoxyParams}{Parameters}
+{\em at} & the index of the row to remove \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a0ae24faf3ef9e6982f6e41f45c9eebde}\index{kilo.c@{kilo.c}!editorDrawMessageBar@{editorDrawMessageBar}}
+\index{editorDrawMessageBar@{editorDrawMessageBar}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorDrawMessageBar()}{editorDrawMessageBar()}}
+{\footnotesize\ttfamily \label{kilo_8c_a0ae24faf3ef9e6982f6e41f45c9eebde} 
+void editor\+Draw\+Message\+Bar (\begin{DoxyParamCaption}\item[{struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}}]{ab}{}\end{DoxyParamCaption})}
+
+
+
+Appends the message stored in E.\+statusmsg to the append buffer. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em ab} & a reference to the append buffer \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a6236022e462c2ceeed7163aac57751e1}\index{kilo.c@{kilo.c}!editorDrawRows@{editorDrawRows}}
+\index{editorDrawRows@{editorDrawRows}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorDrawRows()}{editorDrawRows()}}
+{\footnotesize\ttfamily \label{kilo_8c_a6236022e462c2ceeed7163aac57751e1} 
+void editor\+Draw\+Rows (\begin{DoxyParamCaption}\item[{struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}}]{ab}{}\end{DoxyParamCaption})}
+
+
+
+Handles drawing of each row of the buffer of text being edited. 
+
+To store multiple lines, E.\+row is defined as an array of erow structs. Highlights rows by keeping track of the current text color and looping through all the characters, changing text color via escape sequence when a new word type is detected.
+
+
+\begin{DoxyParams}{Parameters}
+{\em ab} & the append buffer to append to the screen \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a4c6fae25603df97fe6647bc9b650e2cd}\index{kilo.c@{kilo.c}!editorDrawStatusBar@{editorDrawStatusBar}}
+\index{editorDrawStatusBar@{editorDrawStatusBar}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorDrawStatusBar()}{editorDrawStatusBar()}}
+{\footnotesize\ttfamily \label{kilo_8c_a4c6fae25603df97fe6647bc9b650e2cd} 
+void editor\+Draw\+Status\+Bar (\begin{DoxyParamCaption}\item[{struct \mbox{\hyperlink{structabuf}{abuf}} \texorpdfstring{$\ast$}{*}}]{ab}{}\end{DoxyParamCaption})}
+
+
+
+Draws the status bar at the bottom of the screen. 
+
+Appends a string with specical graphic rendition to the bottom of the append buffer
+
+
+\begin{DoxyParams}{Parameters}
+{\em ab} & a reference to the append buffer \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a28cfa432286bd17c79730da8bbcedd48}\index{kilo.c@{kilo.c}!editorFind@{editorFind}}
+\index{editorFind@{editorFind}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorFind()}{editorFind()}}
+{\footnotesize\ttfamily \label{kilo_8c_a28cfa432286bd17c79730da8bbcedd48} 
+void editor\+Find (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Prompts the user to search for a string in the file. 
+
+Linearly scans every line in the text buffer until it finds an occurance of the user\textquotesingle{}s query, then moves the user cursor to the location of the found query. \Hypertarget{kilo_8c_a8cf98f19b000d053dbd9ae2cf957d424}\index{kilo.c@{kilo.c}!editorFindCallback@{editorFindCallback}}
+\index{editorFindCallback@{editorFindCallback}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorFindCallback()}{editorFindCallback()}}
+{\footnotesize\ttfamily \label{kilo_8c_a8cf98f19b000d053dbd9ae2cf957d424} 
+void editor\+Find\+Callback (\begin{DoxyParamCaption}\item[{char \texorpdfstring{$\ast$}{*}}]{query}{, }\item[{int}]{key}{}\end{DoxyParamCaption})}
+
+
+
+A callback function that is called everytime the user inputs text into the search bar. 
+
+Highlights words blue when in search mode, and remembers the previous highlighting data to restore to when we exit search mode.
+
+
+\begin{DoxyParams}{Parameters}
+{\em query} & the word we are searching for \\
+\hline
+{\em key} & the key that the user last pressed \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a461e8856decb29eb95e1010b0bbcae43}\index{kilo.c@{kilo.c}!editorFreeRow@{editorFreeRow}}
+\index{editorFreeRow@{editorFreeRow}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorFreeRow()}{editorFreeRow()}}
+{\footnotesize\ttfamily \label{kilo_8c_a461e8856decb29eb95e1010b0bbcae43} 
+void editor\+Free\+Row (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{}\end{DoxyParamCaption})}
+
+
+
+Deallocates memory for a row. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em row} & the row to deallocate \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_aa29057a4194fec0158f141b54518444a}\index{kilo.c@{kilo.c}!editorInsertChar@{editorInsertChar}}
+\index{editorInsertChar@{editorInsertChar}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorInsertChar()}{editorInsertChar()}}
+{\footnotesize\ttfamily \label{kilo_8c_aa29057a4194fec0158f141b54518444a} 
+void editor\+Insert\+Char (\begin{DoxyParamCaption}\item[{int}]{c}{}\end{DoxyParamCaption})}
+
+
+
+Called by \doxylink{kilo_8c_a7a463a314ab1c9c71846a88a71ea8fe8}{editor\+Process\+Keypress()} to map a basic char to an operation in the text editor. 
+
+Functions in editor operations don\textquotesingle{}t have to worry about the details of modifying an erow
+
+
+\begin{DoxyParams}{Parameters}
+{\em c} & a char c to insert at the location of the cursor \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a5f684231e33ad611337fbe52ea910a47}\index{kilo.c@{kilo.c}!editorInsertNewline@{editorInsertNewline}}
+\index{editorInsertNewline@{editorInsertNewline}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorInsertNewline()}{editorInsertNewline()}}
+{\footnotesize\ttfamily \label{kilo_8c_a5f684231e33ad611337fbe52ea910a47} 
+void editor\+Insert\+Newline (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Supports the inserting of a new line, if we are at the end of the last line. 
+
+\Hypertarget{kilo_8c_a3a16dc547e91a2400ef2b63bae16860e}\index{kilo.c@{kilo.c}!editorInsertRow@{editorInsertRow}}
+\index{editorInsertRow@{editorInsertRow}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorInsertRow()}{editorInsertRow()}}
+{\footnotesize\ttfamily \label{kilo_8c_a3a16dc547e91a2400ef2b63bae16860e} 
+void editor\+Insert\+Row (\begin{DoxyParamCaption}\item[{int}]{at}{, }\item[{char \texorpdfstring{$\ast$}{*}}]{s}{, }\item[{size\+\_\+t}]{len}{}\end{DoxyParamCaption})}
+
+
+
+Insert a row at a given index. 
+
+Allocates space for a new erow, and then copies the given string to a new erow at the end of the E.\+row array
+
+
+\begin{DoxyParams}{Parameters}
+{\em at} & the index to insert the row at \\
+\hline
+{\em s} & the string to be inserted \\
+\hline
+{\em len} & the length of E.\+row \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_af2a534cb150fe37498afa8c1afd177af}\index{kilo.c@{kilo.c}!editorMoveCursor@{editorMoveCursor}}
+\index{editorMoveCursor@{editorMoveCursor}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorMoveCursor()}{editorMoveCursor()}}
+{\footnotesize\ttfamily \label{kilo_8c_af2a534cb150fe37498afa8c1afd177af} 
+void editor\+Move\+Cursor (\begin{DoxyParamCaption}\item[{int}]{key}{}\end{DoxyParamCaption})}
+
+
+
+Moves the cursor based on the arrow keys. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em key} & the key that user clicked \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_ac7e9106f11ecfa36e5695996c1f6e316}\index{kilo.c@{kilo.c}!editorOpen@{editorOpen}}
+\index{editorOpen@{editorOpen}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorOpen()}{editorOpen()}}
+{\footnotesize\ttfamily \label{kilo_8c_ac7e9106f11ecfa36e5695996c1f6e316} 
+void editor\+Open (\begin{DoxyParamCaption}\item[{char \texorpdfstring{$\ast$}{*}}]{filename}{}\end{DoxyParamCaption})}
+
+
+
+Opens a locally stored file by name and reads it line by line. 
+
+Calls the editor\+Inser\+Row on each line to insert all of the file\textquotesingle{}s text contents into the editor
+
+
+\begin{DoxyParams}{Parameters}
+{\em filename} & the name of the file to open \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a7a463a314ab1c9c71846a88a71ea8fe8}\index{kilo.c@{kilo.c}!editorProcessKeypress@{editorProcessKeypress}}
+\index{editorProcessKeypress@{editorProcessKeypress}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorProcessKeypress()}{editorProcessKeypress()}}
+{\footnotesize\ttfamily \label{kilo_8c_a7a463a314ab1c9c71846a88a71ea8fe8} 
+void editor\+Process\+Keypress (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Proccess the user keypress to preform the correct option. 
+
+\Hypertarget{kilo_8c_a4de965d803aea82e894820b40e0ed097}\index{kilo.c@{kilo.c}!editorPrompt@{editorPrompt}}
+\index{editorPrompt@{editorPrompt}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorPrompt()}{editorPrompt()}}
+{\footnotesize\ttfamily \label{kilo_8c_a4de965d803aea82e894820b40e0ed097} 
+char \texorpdfstring{$\ast$}{*} editor\+Prompt (\begin{DoxyParamCaption}\item[{char \texorpdfstring{$\ast$}{*}}]{prompt}{, }\item[{void(\texorpdfstring{$\ast$}{*}}]{callback~}{)(char \texorpdfstring{$\ast$}{*}, int)}\end{DoxyParamCaption})}
+
+
+
+Displays a prompt in the status bar. 
+
+Also provides a way for the user to input a line of text after the prompt
+
+
+\begin{DoxyParams}{Parameters}
+{\em prompt} & a prompt to display to the user in the status bar \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a92979f78e89c86c1b8f99704f7ae584c}\index{kilo.c@{kilo.c}!editorReadKey@{editorReadKey}}
+\index{editorReadKey@{editorReadKey}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorReadKey()}{editorReadKey()}}
+{\footnotesize\ttfamily \label{kilo_8c_a92979f78e89c86c1b8f99704f7ae584c} 
+int editor\+Read\+Key (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Reads in raw input from the user, and appropriately detects special keys. 
+
+The input from the user is read char by char and translated into bytes. \Hypertarget{kilo_8c_acee58e6036bf106ea038464d67dfc201}\index{kilo.c@{kilo.c}!editorRefreshScreen@{editorRefreshScreen}}
+\index{editorRefreshScreen@{editorRefreshScreen}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorRefreshScreen()}{editorRefreshScreen()}}
+{\footnotesize\ttfamily \label{kilo_8c_acee58e6036bf106ea038464d67dfc201} 
+void editor\+Refresh\+Screen (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Refreshes the screen. 
+
+Called only after a keypress \Hypertarget{kilo_8c_a1e282bcd8f1f442f9c6b1e6e610379dd}\index{kilo.c@{kilo.c}!editorRowAppendString@{editorRowAppendString}}
+\index{editorRowAppendString@{editorRowAppendString}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorRowAppendString()}{editorRowAppendString()}}
+{\footnotesize\ttfamily \label{kilo_8c_a1e282bcd8f1f442f9c6b1e6e610379dd} 
+void editor\+Row\+Append\+String (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{, }\item[{char \texorpdfstring{$\ast$}{*}}]{s}{, }\item[{size\+\_\+t}]{len}{}\end{DoxyParamCaption})}
+
+
+
+Appends a whole string to the end of the row. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em row} & a row to append a string to the end of \\
+\hline
+{\em s} & the string to append to the end of the string \\
+\hline
+{\em len} & the length of of the string to add \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_ac292db94a14cf6392c830afc31a5f644}\index{kilo.c@{kilo.c}!editorRowCxToRx@{editorRowCxToRx}}
+\index{editorRowCxToRx@{editorRowCxToRx}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorRowCxToRx()}{editorRowCxToRx()}}
+{\footnotesize\ttfamily \label{kilo_8c_ac292db94a14cf6392c830afc31a5f644} 
+int editor\+Row\+Cx\+To\+Rx (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{, }\item[{int}]{cx}{}\end{DoxyParamCaption})}
+
+
+
+Calculates the correct row length by counting tabs correctly. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em \texorpdfstring{$\ast$}{*}row} & a reference to the row that we are counting \\
+\hline
+{\em cx} & the length of the row to fix \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a4bc8521084efa00016a83cd7f11334e1}\index{kilo.c@{kilo.c}!editorRowDelChar@{editorRowDelChar}}
+\index{editorRowDelChar@{editorRowDelChar}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorRowDelChar()}{editorRowDelChar()}}
+{\footnotesize\ttfamily \label{kilo_8c_a4bc8521084efa00016a83cd7f11334e1} 
+void editor\+Row\+Del\+Char (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{, }\item[{int}]{at}{}\end{DoxyParamCaption})}
+
+
+
+Dels a char in a row. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em row} & a row to delete a char in \\
+\hline
+{\em at} & the index of the char to delete \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_afdb757e8ae4057355e181a02396b8c55}\index{kilo.c@{kilo.c}!editorRowInsertChar@{editorRowInsertChar}}
+\index{editorRowInsertChar@{editorRowInsertChar}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorRowInsertChar()}{editorRowInsertChar()}}
+{\footnotesize\ttfamily \label{kilo_8c_afdb757e8ae4057355e181a02396b8c55} 
+void editor\+Row\+Insert\+Char (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{, }\item[{int}]{at}{, }\item[{int}]{c}{}\end{DoxyParamCaption})}
+
+
+
+Inserts a char at a given index of a given row. 
+
+Inserts a char at an index of a row, and dynamically allocates memory to make space
+
+
+\begin{DoxyParams}{Parameters}
+{\em row} & the row to add the char to \\
+\hline
+{\em at} & the index of the row to add the char to \\
+\hline
+{\em c} & the char to insert into the row \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_ae94c7e64a0a5c007cef67fed6e295514}\index{kilo.c@{kilo.c}!editorRowRxToCx@{editorRowRxToCx}}
+\index{editorRowRxToCx@{editorRowRxToCx}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorRowRxToCx()}{editorRowRxToCx()}}
+{\footnotesize\ttfamily \label{kilo_8c_ae94c7e64a0a5c007cef67fed6e295514} 
+int editor\+Row\+Rx\+To\+Cx (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{, }\item[{int}]{rx}{}\end{DoxyParamCaption})}
+
+
+
+Converts a render index into a index in the chars array. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em \texorpdfstring{$\ast$}{*}row} & a reference to the row that we are counting \\
+\hline
+{\em rx} & the render index \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_ab194682d67a26adec30476ce08cc5474}\index{kilo.c@{kilo.c}!editorRowsToString@{editorRowsToString}}
+\index{editorRowsToString@{editorRowsToString}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorRowsToString()}{editorRowsToString()}}
+{\footnotesize\ttfamily \label{kilo_8c_ab194682d67a26adec30476ce08cc5474} 
+char \texorpdfstring{$\ast$}{*} editor\+Rows\+To\+String (\begin{DoxyParamCaption}\item[{int \texorpdfstring{$\ast$}{*}}]{buflen}{}\end{DoxyParamCaption})}
+
+
+
+Converts a all the text data to a string that will be written to the disk eventually. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em buflen} & the length of the textbuffer that needs to be parsed \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a68263950ddb1d812b168bfec55eed130}\index{kilo.c@{kilo.c}!editorSave@{editorSave}}
+\index{editorSave@{editorSave}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorSave()}{editorSave()}}
+{\footnotesize\ttfamily \label{kilo_8c_a68263950ddb1d812b168bfec55eed130} 
+void editor\+Save (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Either creates a new file and opens it, or modifies the existing file stored in E.\+filename. 
+
+TODO\+: More advanced editors will write to a new, temporary file then rename that file to the actual file the user wants to overwrite. \Hypertarget{kilo_8c_ac4bae93e2e5ada20a06816b4162e37ca}\index{kilo.c@{kilo.c}!editorScroll@{editorScroll}}
+\index{editorScroll@{editorScroll}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorScroll()}{editorScroll()}}
+{\footnotesize\ttfamily \label{kilo_8c_ac4bae93e2e5ada20a06816b4162e37ca} 
+void editor\+Scroll (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Allows scrolling through the text editor. 
+
+Checks if the cursor has moved outside of the visible window, and if so adjust E.\+rowoff so that the cursor is just inside the visible window \Hypertarget{kilo_8c_a051616bc78710cb3af54f2fd26a88249}\index{kilo.c@{kilo.c}!editorSelectSyntaxHighlight@{editorSelectSyntaxHighlight}}
+\index{editorSelectSyntaxHighlight@{editorSelectSyntaxHighlight}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorSelectSyntaxHighlight()}{editorSelectSyntaxHighlight()}}
+{\footnotesize\ttfamily \label{kilo_8c_a051616bc78710cb3af54f2fd26a88249} 
+void editor\+Select\+Syntax\+Highlight (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Matches the current filename to one of the filematch fields in HLDB. 
+
+\Hypertarget{kilo_8c_a507fc962f80d3c43c23718965348520e}\index{kilo.c@{kilo.c}!editorSetStatusMessage@{editorSetStatusMessage}}
+\index{editorSetStatusMessage@{editorSetStatusMessage}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorSetStatusMessage()}{editorSetStatusMessage()}}
+{\footnotesize\ttfamily \label{kilo_8c_a507fc962f80d3c43c23718965348520e} 
+void editor\+Set\+Status\+Message (\begin{DoxyParamCaption}\item[{const char \texorpdfstring{$\ast$}{*}}]{fmt}{, }\item[{}]{...}{}\end{DoxyParamCaption})}
+
+
+
+Append the status message from E.\+statusmsg to the append buffer. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em fmt} & a format string \\
+\hline
+{\em ...} & a variable number of arguements, similar to printf \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a61d99d26ac6d1ad082b2dc34498fcb9d}\index{kilo.c@{kilo.c}!editorSyntaxToColor@{editorSyntaxToColor}}
+\index{editorSyntaxToColor@{editorSyntaxToColor}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorSyntaxToColor()}{editorSyntaxToColor()}}
+{\footnotesize\ttfamily \label{kilo_8c_a61d99d26ac6d1ad082b2dc34498fcb9d} 
+int editor\+Syntax\+To\+Color (\begin{DoxyParamCaption}\item[{int}]{hl}{}\end{DoxyParamCaption})}
+
+
+
+maps values in hl (highlight array) to actual ANSI color codes 
+
+
+\begin{DoxyParams}{Parameters}
+{\em hl} & the highlight array \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a82d95ee3b40943bcaa021a89756aafa8}\index{kilo.c@{kilo.c}!editorUpdateRow@{editorUpdateRow}}
+\index{editorUpdateRow@{editorUpdateRow}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorUpdateRow()}{editorUpdateRow()}}
+{\footnotesize\ttfamily \label{kilo_8c_a82d95ee3b40943bcaa021a89756aafa8} 
+void editor\+Update\+Row (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{}\end{DoxyParamCaption})}
+
+
+
+Updates the render array whenever the text of the row changes. 
+
+The main function of this is to render tabs as multiple space characters and make sure the sizes are being tracked properly. Memory
+
+
+\begin{DoxyParams}{Parameters}
+{\em \texorpdfstring{$\ast$}{*}row} & a reference to the raw row data \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_afaaf0faf104479999b01bc09e894e3e4}\index{kilo.c@{kilo.c}!editorUpdateSyntax@{editorUpdateSyntax}}
+\index{editorUpdateSyntax@{editorUpdateSyntax}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{editorUpdateSyntax()}{editorUpdateSyntax()}}
+{\footnotesize\ttfamily \label{kilo_8c_afaaf0faf104479999b01bc09e894e3e4} 
+void editor\+Update\+Syntax (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structerow}{erow}} \texorpdfstring{$\ast$}{*}}]{row}{}\end{DoxyParamCaption})}
+
+
+
+Goes through the characters of an erow and highlights them all. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em row} & the erow we want to highlight \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a37aaa5d8dd5b525007a0645edf49638f}\index{kilo.c@{kilo.c}!enableRawMode@{enableRawMode}}
+\index{enableRawMode@{enableRawMode}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{enableRawMode()}{enableRawMode()}}
+{\footnotesize\ttfamily \label{kilo_8c_a37aaa5d8dd5b525007a0645edf49638f} 
+void enable\+Raw\+Mode (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Switches the terminal to RAW MODE, which allows the programmer to process each keystroke the user inputs individually. 
+
+RAW MODE is achieved by disabled a bunch of flags in E.\+orig\+\_\+termios, the original terminal attributes. \Hypertarget{kilo_8c_a485c870734764c8e5acce9e16e4d70ac}\index{kilo.c@{kilo.c}!getCursorPosition@{getCursorPosition}}
+\index{getCursorPosition@{getCursorPosition}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{getCursorPosition()}{getCursorPosition()}}
+{\footnotesize\ttfamily \label{kilo_8c_a485c870734764c8e5acce9e16e4d70ac} 
+int get\+Cursor\+Position (\begin{DoxyParamCaption}\item[{int \texorpdfstring{$\ast$}{*}}]{rows}{, }\item[{int \texorpdfstring{$\ast$}{*}}]{cols}{}\end{DoxyParamCaption})}
+
+
+
+Determines the current x and y position of the cursor. 
+
+Utilizes the \textquotesingle{}n\textquotesingle{} command, Device Status Report to query the terminal for status information. We then parse the resulting cursor position report to extract coordinates.
+
+
+\begin{DoxyParams}{Parameters}
+{\em rows} & a dereference of the y coordinate of the cursor to be modified in place \\
+\hline
+{\em cols} & a dereference of the x coordinate of the cursor to be modified in place \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_aeb7a921b1f250259a639fe7b24166021}\index{kilo.c@{kilo.c}!getWindowSize@{getWindowSize}}
+\index{getWindowSize@{getWindowSize}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{getWindowSize()}{getWindowSize()}}
+{\footnotesize\ttfamily \label{kilo_8c_aeb7a921b1f250259a639fe7b24166021} 
+int get\+Window\+Size (\begin{DoxyParamCaption}\item[{int \texorpdfstring{$\ast$}{*}}]{rows}{, }\item[{int \texorpdfstring{$\ast$}{*}}]{cols}{}\end{DoxyParamCaption})}
+
+
+
+Determines the height and width of the screen. 
+
+To make this function non device specific, we determine the window size by moving the cursor to bottom right corner of the screen and getting the cursor position
+
+
+\begin{DoxyParams}{Parameters}
+{\em rows} & the x coordinate of the curosor \\
+\hline
+{\em cols} & the y coordinate of the cursor \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a979919615ca983efccb1209f1a39cf5a}\index{kilo.c@{kilo.c}!initEditor@{initEditor}}
+\index{initEditor@{initEditor}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{initEditor()}{initEditor()}}
+{\footnotesize\ttfamily \label{kilo_8c_a979919615ca983efccb1209f1a39cf5a} 
+void init\+Editor (\begin{DoxyParamCaption}\item[{void}]{}{}\end{DoxyParamCaption})}
+
+
+
+Initializes default values for editor config. 
+
+\Hypertarget{kilo_8c_afd2ade8d4e20fc9e78850fa3ccd61ef3}\index{kilo.c@{kilo.c}!is\_separator@{is\_separator}}
+\index{is\_separator@{is\_separator}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{is\_separator()}{is\_separator()}}
+{\footnotesize\ttfamily \label{kilo_8c_afd2ade8d4e20fc9e78850fa3ccd61ef3} 
+int is\+\_\+separator (\begin{DoxyParamCaption}\item[{int}]{c}{}\end{DoxyParamCaption})}
+
+
+
+Identifies seperator charcters. 
+
+strchr() returns a pointer to the first matching char of a string.
+
+
+\begin{DoxyParams}{Parameters}
+{\em c} & a char to identify \\
+\hline
+\end{DoxyParams}
+\Hypertarget{kilo_8c_a0ddf1224851353fc92bfbff6f499fa97}\index{kilo.c@{kilo.c}!main@{main}}
+\index{main@{main}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{main()}{main()}}
+{\footnotesize\ttfamily \label{kilo_8c_a0ddf1224851353fc92bfbff6f499fa97} 
+int main (\begin{DoxyParamCaption}\item[{int}]{argc}{, }\item[{char \texorpdfstring{$\ast$}{*}}]{argv}{\mbox{[}$\,$\mbox{]}}\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Variable Documentation}
+\Hypertarget{kilo_8c_a65182c667beb7c85c859d7661b246ac5}\index{kilo.c@{kilo.c}!C\_HL\_extensions@{C\_HL\_extensions}}
+\index{C\_HL\_extensions@{C\_HL\_extensions}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{C\_HL\_extensions}{C\_HL\_extensions}}
+{\footnotesize\ttfamily \label{kilo_8c_a65182c667beb7c85c859d7661b246ac5} 
+char\texorpdfstring{$\ast$}{*} C\+\_\+\+HL\+\_\+extensions\mbox{[}$\,$\mbox{]} = \{ "{}.c"{}, "{}.h"{}, "{}.cpp"{}, NULL \}}
+
+\Hypertarget{kilo_8c_a4925d040b30cb6504c806d02ee1d96b5}\index{kilo.c@{kilo.c}!C\_HL\_keywords@{C\_HL\_keywords}}
+\index{C\_HL\_keywords@{C\_HL\_keywords}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{C\_HL\_keywords}{C\_HL\_keywords}}
+{\footnotesize\ttfamily \label{kilo_8c_a4925d040b30cb6504c806d02ee1d96b5} 
+char\texorpdfstring{$\ast$}{*} C\+\_\+\+HL\+\_\+keywords\mbox{[}$\,$\mbox{]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=\ \{}
+\DoxyCodeLine{\ \ \textcolor{stringliteral}{"{}switch"{}},\ \textcolor{stringliteral}{"{}if"{}},\ \textcolor{stringliteral}{"{}while"{}},\ \textcolor{stringliteral}{"{}for"{}},\ \textcolor{stringliteral}{"{}break"{}},\ \textcolor{stringliteral}{"{}continue"{}},\ \textcolor{stringliteral}{"{}return"{}},\ \textcolor{stringliteral}{"{}else"{}},}
+\DoxyCodeLine{\ \ \textcolor{stringliteral}{"{}struct"{}},\ \textcolor{stringliteral}{"{}union"{}},\ \textcolor{stringliteral}{"{}typedef"{}},\ \textcolor{stringliteral}{"{}static"{}},\ \textcolor{stringliteral}{"{}enum"{}},\ \textcolor{stringliteral}{"{}class"{}},\ \textcolor{stringliteral}{"{}case"{}},}
+\DoxyCodeLine{\ \ \textcolor{stringliteral}{"{}int|"{}},\ \textcolor{stringliteral}{"{}long|"{}},\ \textcolor{stringliteral}{"{}double|"{}},\ \textcolor{stringliteral}{"{}float|"{}},\ \textcolor{stringliteral}{"{}char|"{}},\ \textcolor{stringliteral}{"{}unsigned|"{}},\ \textcolor{stringliteral}{"{}signed|"{}},}
+\DoxyCodeLine{\ \ \textcolor{stringliteral}{"{}void|"{}},\ NULL}
+\DoxyCodeLine{\}}
+
+\end{DoxyCode}
+\Hypertarget{kilo_8c_a2102c449d589a72385cc03ed8906854f}\index{kilo.c@{kilo.c}!E@{E}}
+\index{E@{E}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{E}{E}}
+{\footnotesize\ttfamily \label{kilo_8c_a2102c449d589a72385cc03ed8906854f} 
+struct \mbox{\hyperlink{structeditor_config}{editor\+Config}} E}
+
+\Hypertarget{kilo_8c_a0c876f47e5edee69a4f936864cc96830}\index{kilo.c@{kilo.c}!HLDB@{HLDB}}
+\index{HLDB@{HLDB}!kilo.c@{kilo.c}}
+\doxysubsubsection{\texorpdfstring{HLDB}{HLDB}}
+{\footnotesize\ttfamily \label{kilo_8c_a0c876f47e5edee69a4f936864cc96830} 
+struct \mbox{\hyperlink{structeditor_syntax}{editor\+Syntax}} HLDB\mbox{[}$\,$\mbox{]}}
+
+{\bfseries Initial value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{=\ \{}
+\DoxyCodeLine{\ \ \{}
+\DoxyCodeLine{\ \ \ \ \textcolor{stringliteral}{"{}c"{}},}
+\DoxyCodeLine{\ \ \ \ \mbox{\hyperlink{kilo_8c_a65182c667beb7c85c859d7661b246ac5}{C\_HL\_extensions}},}
+\DoxyCodeLine{\ \ \ \ \mbox{\hyperlink{kilo_8c_a4925d040b30cb6504c806d02ee1d96b5}{C\_HL\_keywords}},}
+\DoxyCodeLine{\ \ \ \ \textcolor{stringliteral}{"{}//"{}},\ \textcolor{stringliteral}{"{}/*"{}},\ \textcolor{stringliteral}{"{}*/"{}},}
+\DoxyCodeLine{\ \ \ \ \mbox{\hyperlink{kilo_8c_a8f4c528a8ea0afe3198c84d13dfb41ab}{HL\_HIGHLIGHT\_NUMBERS}}\ |\ \mbox{\hyperlink{kilo_8c_ad153e738bdfb1a7e4406bb630231e894}{HL\_HIGHLIGHT\_STRINGS}}}
+\DoxyCodeLine{\ \ \},}
+\DoxyCodeLine{\}}
+
+\end{DoxyCode}

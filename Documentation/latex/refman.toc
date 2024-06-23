@@ -1,0 +1,93 @@
+\@ifundefined {etoctocstyle}{\let \etoc@startlocaltoc \@gobble \let \etoc@settocdepth \@gobble \let \etoc@depthtag \@gobble \let \etoc@setlocaltop \@gobble }{}
+\contentsline {chapter}{\numberline {1}Vim\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Together}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Table of Contents}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}1. Project Problem and Solution Statement}{1}{section.1.2}%
+\contentsline {section}{\numberline {1.3}2. High Level Design Overview}{1}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Functional and Nonfunctional Requirements}{1}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}System Architecture}{1}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3}Key Components of the Kilo}{1}{subsection.1.3.3}%
+\contentsline {section}{\numberline {1.4}3. Documentation}{1}{section.1.4}%
+\contentsline {chapter}{\numberline {2}Data Structure Index}{3}{chapter.2}%
+\contentsline {section}{\numberline {2.1}Data Structures}{3}{section.2.1}%
+\contentsline {chapter}{\numberline {3}File Index}{5}{chapter.3}%
+\contentsline {section}{\numberline {3.1}File List}{5}{section.3.1}%
+\contentsline {chapter}{\numberline {4}Data Structure Documentation}{7}{chapter.4}%
+\contentsline {section}{\numberline {4.1}abuf Struct Reference}{7}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Field Documentation}{7}{subsection.4.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.1.1}b}{7}{subsubsection.4.1.1.1}%
+\contentsline {subsubsection}{\numberline {4.1.1.2}len}{7}{subsubsection.4.1.1.2}%
+\contentsline {section}{\numberline {4.2}editor\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}Config Struct Reference}{7}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Field Documentation}{8}{subsection.4.2.1}%
+\contentsline {subsubsection}{\numberline {4.2.1.1}coloff}{8}{subsubsection.4.2.1.1}%
+\contentsline {subsubsection}{\numberline {4.2.1.2}cx}{8}{subsubsection.4.2.1.2}%
+\contentsline {subsubsection}{\numberline {4.2.1.3}cy}{8}{subsubsection.4.2.1.3}%
+\contentsline {subsubsection}{\numberline {4.2.1.4}dirty}{8}{subsubsection.4.2.1.4}%
+\contentsline {subsubsection}{\numberline {4.2.1.5}filename}{8}{subsubsection.4.2.1.5}%
+\contentsline {subsubsection}{\numberline {4.2.1.6}numrows}{8}{subsubsection.4.2.1.6}%
+\contentsline {subsubsection}{\numberline {4.2.1.7}orig\_termios}{8}{subsubsection.4.2.1.7}%
+\contentsline {subsubsection}{\numberline {4.2.1.8}row}{8}{subsubsection.4.2.1.8}%
+\contentsline {subsubsection}{\numberline {4.2.1.9}rowoff}{8}{subsubsection.4.2.1.9}%
+\contentsline {subsubsection}{\numberline {4.2.1.10}rx}{8}{subsubsection.4.2.1.10}%
+\contentsline {subsubsection}{\numberline {4.2.1.11}screencols}{9}{subsubsection.4.2.1.11}%
+\contentsline {subsubsection}{\numberline {4.2.1.12}screenrows}{9}{subsubsection.4.2.1.12}%
+\contentsline {subsubsection}{\numberline {4.2.1.13}statusmsg}{9}{subsubsection.4.2.1.13}%
+\contentsline {subsubsection}{\numberline {4.2.1.14}statusmsg\_time}{9}{subsubsection.4.2.1.14}%
+\contentsline {section}{\numberline {4.3}erow Struct Reference}{9}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Field Documentation}{9}{subsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.3.1.1}chars}{9}{subsubsection.4.3.1.1}%
+\contentsline {subsubsection}{\numberline {4.3.1.2}render}{9}{subsubsection.4.3.1.2}%
+\contentsline {subsubsection}{\numberline {4.3.1.3}rsize}{9}{subsubsection.4.3.1.3}%
+\contentsline {subsubsection}{\numberline {4.3.1.4}size}{9}{subsubsection.4.3.1.4}%
+\contentsline {chapter}{\numberline {5}File Documentation}{11}{chapter.5}%
+\contentsline {section}{\numberline {5.1}kilo.\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}c File Reference}{11}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}Detailed Description}{13}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {5.1.2}Macro Definition Documentation}{13}{subsection.5.1.2}%
+\contentsline {subsubsection}{\numberline {5.1.2.1}\_BSD\_SOURCE}{13}{subsubsection.5.1.2.1}%
+\contentsline {subsubsection}{\numberline {5.1.2.2}\_DEFAULT\_SOURCE}{13}{subsubsection.5.1.2.2}%
+\contentsline {subsubsection}{\numberline {5.1.2.3}\_GNU\_SOURCE}{13}{subsubsection.5.1.2.3}%
+\contentsline {subsubsection}{\numberline {5.1.2.4}ABUF\_INIT}{13}{subsubsection.5.1.2.4}%
+\contentsline {subsubsection}{\numberline {5.1.2.5}CTRL\_KEY}{13}{subsubsection.5.1.2.5}%
+\contentsline {subsubsection}{\numberline {5.1.2.6}KILO\_QUIT\_TIMES}{13}{subsubsection.5.1.2.6}%
+\contentsline {subsubsection}{\numberline {5.1.2.7}KILO\_TAB\_STOP}{13}{subsubsection.5.1.2.7}%
+\contentsline {subsubsection}{\numberline {5.1.2.8}KILO\_VERSION}{14}{subsubsection.5.1.2.8}%
+\contentsline {subsection}{\numberline {5.1.3}Typedef Documentation}{14}{subsection.5.1.3}%
+\contentsline {subsubsection}{\numberline {5.1.3.1}erow}{14}{subsubsection.5.1.3.1}%
+\contentsline {subsection}{\numberline {5.1.4}Enumeration Type Documentation}{14}{subsection.5.1.4}%
+\contentsline {subsubsection}{\numberline {5.1.4.1}editorKey}{14}{subsubsection.5.1.4.1}%
+\contentsline {subsection}{\numberline {5.1.5}Function Documentation}{14}{subsection.5.1.5}%
+\contentsline {subsubsection}{\numberline {5.1.5.1}abAppend()}{14}{subsubsection.5.1.5.1}%
+\contentsline {subsubsection}{\numberline {5.1.5.2}abFree()}{14}{subsubsection.5.1.5.2}%
+\contentsline {subsubsection}{\numberline {5.1.5.3}die()}{14}{subsubsection.5.1.5.3}%
+\contentsline {subsubsection}{\numberline {5.1.5.4}disableRawMode()}{15}{subsubsection.5.1.5.4}%
+\contentsline {subsubsection}{\numberline {5.1.5.5}editorDelChar()}{15}{subsubsection.5.1.5.5}%
+\contentsline {subsubsection}{\numberline {5.1.5.6}editorDelRow()}{15}{subsubsection.5.1.5.6}%
+\contentsline {subsubsection}{\numberline {5.1.5.7}editorDrawMessageBar()}{15}{subsubsection.5.1.5.7}%
+\contentsline {subsubsection}{\numberline {5.1.5.8}editorDrawRows()}{15}{subsubsection.5.1.5.8}%
+\contentsline {subsubsection}{\numberline {5.1.5.9}editorDrawStatusBar()}{15}{subsubsection.5.1.5.9}%
+\contentsline {subsubsection}{\numberline {5.1.5.10}editorFreeRow()}{15}{subsubsection.5.1.5.10}%
+\contentsline {subsubsection}{\numberline {5.1.5.11}editorInsertChar()}{15}{subsubsection.5.1.5.11}%
+\contentsline {subsubsection}{\numberline {5.1.5.12}editorInsertNewline()}{16}{subsubsection.5.1.5.12}%
+\contentsline {subsubsection}{\numberline {5.1.5.13}editorInsertRow()}{16}{subsubsection.5.1.5.13}%
+\contentsline {subsubsection}{\numberline {5.1.5.14}editorMoveCursor()}{16}{subsubsection.5.1.5.14}%
+\contentsline {subsubsection}{\numberline {5.1.5.15}editorOpen()}{16}{subsubsection.5.1.5.15}%
+\contentsline {subsubsection}{\numberline {5.1.5.16}editorProcessKeypress()}{16}{subsubsection.5.1.5.16}%
+\contentsline {subsubsection}{\numberline {5.1.5.17}editorPrompt()}{16}{subsubsection.5.1.5.17}%
+\contentsline {subsubsection}{\numberline {5.1.5.18}editorReadKey()}{16}{subsubsection.5.1.5.18}%
+\contentsline {subsubsection}{\numberline {5.1.5.19}editorRefreshScreen()}{16}{subsubsection.5.1.5.19}%
+\contentsline {subsubsection}{\numberline {5.1.5.20}editorRowAppendString()}{17}{subsubsection.5.1.5.20}%
+\contentsline {subsubsection}{\numberline {5.1.5.21}editorRowCxToRx()}{17}{subsubsection.5.1.5.21}%
+\contentsline {subsubsection}{\numberline {5.1.5.22}editorRowDelChar()}{17}{subsubsection.5.1.5.22}%
+\contentsline {subsubsection}{\numberline {5.1.5.23}editorRowInsertChar()}{17}{subsubsection.5.1.5.23}%
+\contentsline {subsubsection}{\numberline {5.1.5.24}editorRowsToString()}{17}{subsubsection.5.1.5.24}%
+\contentsline {subsubsection}{\numberline {5.1.5.25}editorSave()}{17}{subsubsection.5.1.5.25}%
+\contentsline {subsubsection}{\numberline {5.1.5.26}editorScroll()}{17}{subsubsection.5.1.5.26}%
+\contentsline {subsubsection}{\numberline {5.1.5.27}editorSetStatusMessage()}{17}{subsubsection.5.1.5.27}%
+\contentsline {subsubsection}{\numberline {5.1.5.28}editorUpdateRow()}{18}{subsubsection.5.1.5.28}%
+\contentsline {subsubsection}{\numberline {5.1.5.29}enableRawMode()}{18}{subsubsection.5.1.5.29}%
+\contentsline {subsubsection}{\numberline {5.1.5.30}getCursorPosition()}{18}{subsubsection.5.1.5.30}%
+\contentsline {subsubsection}{\numberline {5.1.5.31}getWindowSize()}{18}{subsubsection.5.1.5.31}%
+\contentsline {subsubsection}{\numberline {5.1.5.32}initEditor()}{18}{subsubsection.5.1.5.32}%
+\contentsline {subsubsection}{\numberline {5.1.5.33}main()}{18}{subsubsection.5.1.5.33}%
+\contentsline {subsection}{\numberline {5.1.6}Variable Documentation}{18}{subsection.5.1.6}%
+\contentsline {subsubsection}{\numberline {5.1.6.1}E}{18}{subsubsection.5.1.6.1}%
+\contentsline {section}{\numberline {5.2}README.\discretionary {\mbox {\scriptsize $\hookleftarrow $}}{}{}md File Reference}{18}{section.5.2}%
